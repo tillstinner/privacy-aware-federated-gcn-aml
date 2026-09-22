@@ -1,5 +1,5 @@
 cff-version: 1.2.0
-message: "If you use this software, please cite this repository."
+message: "If you use this software or its accompanying thesis, please cite the relevant work."
 title: "Privacy-Aware Federated GCNs for AML"
 type: software
 authors:
@@ -14,3 +14,10 @@ keywords:
   - anti-money laundering
   - homomorphic encryption
   - differential privacy
+references:
+  - type: thesis
+    title: "Privacy-Preserving Federated Graph Learning for AML"
+    authors:
+      - family-names: Stinner
+        given-names: Till
+    year: 2026

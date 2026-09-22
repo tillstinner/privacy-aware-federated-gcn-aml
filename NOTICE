@@ -1,6 +1,15 @@
 Privacy-Aware Federated GCNs for AML
 Copyright 2026 Till Stinner
 
+The accompanying thesis, thesis.pdf, contains its own licensing notice. Its
+original content is made available under the Creative Commons Attribution 4.0
+International license:
+
+  https://creativecommons.org/licenses/by/4.0/
+
+Cited or otherwise incorporated third-party material in the thesis remains
+subject to its respective terms.
+
 This repository includes a modified AMLSim transaction graph generator and
 configuration material derived from IBM AMLSim:
 

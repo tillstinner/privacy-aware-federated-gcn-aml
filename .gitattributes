@@ -4,6 +4,7 @@
 *.csv text eol=lf
 *.json text eol=lf
 *.md text eol=lf
+*.pdf binary
 *.py text eol=lf
 *.sbatch text eol=lf
 *.toml text eol=lf

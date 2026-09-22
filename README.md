@@ -5,8 +5,20 @@ anti-money-laundering transaction graphs. The repository compares centralized
 GCNs, local cut-edge FedAvg, and one- or two-hop pretraining feature aggregation
 across bank-partitioned AMLSim graphs.
 
-The implementation was developed for the bachelor's thesis *Privacy-Preserving
-Federated Graph Learning for AML*.
+The implementation was developed for the bachelor's thesis
+[*Privacy-Preserving Federated Graph Learning for AML*](thesis.pdf).
+
+## Thesis
+
+The complete thesis is included as [`thesis.pdf`](thesis.pdf):
+
+> Till Stinner. *Privacy-Preserving Federated Graph Learning for AML*.
+> Bachelor's thesis, RWTH Aachen University, 2026.
+
+The PDF contains its own licensing notice. Its original content is available
+under the Creative Commons Attribution 4.0 International license; cited or
+otherwise incorporated third-party material remains subject to its respective
+terms.
 
 ## Scope
 
@@ -151,10 +163,11 @@ methodological foundations and included modified AMLSim source.
 
 ## Citation
 
-Software citation metadata is provided in `CITATION.cff`.
+Software and thesis citation metadata is provided in `CITATION.cff`.
 
 ## License
 
 Unless otherwise noted in `NOTICE`, this repository is licensed under the
 Apache License 2.0. The AMLSim-derived generator overlay retains the upstream
-Apache-2.0 terms.
+Apache-2.0 terms. The accompanying thesis has the separate CC BY 4.0 licensing
+notice described above.
