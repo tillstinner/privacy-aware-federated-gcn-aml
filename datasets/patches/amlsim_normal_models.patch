@@ -1,0 +1,287 @@
+diff --git a/src/main/java/amlsim/AccountGroup.java b/src/main/java/amlsim/AccountGroup.java
+index 1353815..7f419b1 100644
+--- a/src/main/java/amlsim/AccountGroup.java
++++ b/src/main/java/amlsim/AccountGroup.java
+@@ -67,6 +67,62 @@ public class AccountGroup {
+         return members;
+     }
+ 
++    public List<Account> getMembersExcluding(Account account) {
++        List<Account> others = new ArrayList<>();
++        for (Account member : this.members) {
++            if (member != account) {
++                others.add(member);
++            }
++        }
++        return others;
++    }
++
++    public List<Account> getMembersInBeneList(Account account) {
++        List<Account> candidates = new ArrayList<>();
++        List<Account> beneList = account.getBeneList();
++        for (Account member : this.members) {
++            if (member != account && beneList.contains(member)) {
++                candidates.add(member);
++            }
++        }
++        return candidates;
++    }
++
++    public List<Account> getMembersInOrigList(Account account) {
++        List<Account> candidates = new ArrayList<>();
++        List<Account> origList = account.getOrigList();
++        for (Account member : this.members) {
++            if (member != account && origList.contains(member)) {
++                candidates.add(member);
++            }
++        }
++        return candidates;
++    }
++
++    public List<Account> getPreferredBeneList(Account account, Random random, double groupBias) {
++        List<Account> groupCandidates = this.getMembersInBeneList(account);
++        List<Account> beneList = account.getBeneList();
++        if (groupCandidates.isEmpty()) {
++            return beneList;
++        }
++        if (beneList.isEmpty()) {
++            return groupCandidates;
++        }
++        return random.nextDouble() < groupBias ? groupCandidates : beneList;
++    }
++
++    public List<Account> getPreferredOrigList(Account account, Random random, double groupBias) {
++        List<Account> groupCandidates = this.getMembersInOrigList(account);
++        List<Account> origList = account.getOrigList();
++        if (groupCandidates.isEmpty()) {
++            return origList;
++        }
++        if (origList.isEmpty()) {
++            return groupCandidates;
++        }
++        return random.nextDouble() < groupBias ? groupCandidates : origList;
++    }
++
+     /**
+      * Get the main account
+      * @return The main account if exists.
+diff --git a/src/main/java/amlsim/model/normal/FanInTransactionModel.java b/src/main/java/amlsim/model/normal/FanInTransactionModel.java
+index 419afa0..1ca6af2 100755
+--- a/src/main/java/amlsim/model/normal/FanInTransactionModel.java
++++ b/src/main/java/amlsim/model/normal/FanInTransactionModel.java
+@@ -11,6 +11,7 @@ import java.util.*;
+  * Receive money from one of the senders (fan-in)
+  */
+ public class FanInTransactionModel extends AbstractTransactionModel {
++    private static final double GROUP_MEMBER_BIAS = 0.85;
+ 
+     private int index = 0;
+ 
+@@ -44,8 +45,8 @@ public class FanInTransactionModel extends AbstractTransactionModel {
+ 
+     @Override
+     public void sendTransactions(long step, Account account) {
+-        List<Account> beneList = account.getBeneList();  // Destination accounts
+-        int numOrigs = beneList.size();
++        List<Account> origList = this.accountGroup.getPreferredOrigList(account, this.random, GROUP_MEMBER_BIAS);
++        int numOrigs = origList.size();
+         if (!isValidStep(step) || numOrigs == 0) {
+             return;
+         }
+@@ -53,12 +54,11 @@ public class FanInTransactionModel extends AbstractTransactionModel {
+             index = 0;
+         }
+ 
+-        this.transactionAmount = new TargetedTransactionAmount(account.getBalance(), this.random);
++        Account orig = origList.get(index);
++        this.transactionAmount = new TargetedTransactionAmount(orig.getBalance(), this.random);
+         double amount = this.transactionAmount.doubleValue();
+-        
+-        Account bene = beneList.get(index);
+ 
+-        makeTransaction(step, amount, account, bene);
++        makeTransaction(step, amount, orig, account);
+         index++;
+     }
+ }
+diff --git a/src/main/java/amlsim/model/normal/FanOutTransactionModel.java b/src/main/java/amlsim/model/normal/FanOutTransactionModel.java
+index b60fa20..149fbcd 100755
+--- a/src/main/java/amlsim/model/normal/FanOutTransactionModel.java
++++ b/src/main/java/amlsim/model/normal/FanOutTransactionModel.java
+@@ -9,6 +9,7 @@ import java.util.*;
+  * Distribute money to multiple neighboring accounts (fan-out)
+  */
+ public class FanOutTransactionModel extends AbstractTransactionModel {
++    private static final double GROUP_MEMBER_BIAS = 0.85;
+ 
+     private int index = 0;
+     
+@@ -41,7 +42,7 @@ public class FanOutTransactionModel extends AbstractTransactionModel {
+ 
+     @Override
+     public void sendTransactions(long step, Account account) {
+-        List<Account> beneList = account.getBeneList();  // Destination accounts
++        List<Account> beneList = this.accountGroup.getPreferredBeneList(account, this.random, GROUP_MEMBER_BIAS);
+         int numBene = beneList.size();
+         if (!isValidStep(step) || numBene == 0) { // No more destination accounts
+             return;
+diff --git a/src/main/java/amlsim/model/normal/ForwardTransactionModel.java b/src/main/java/amlsim/model/normal/ForwardTransactionModel.java
+index e10df3a..8ca426f 100755
+--- a/src/main/java/amlsim/model/normal/ForwardTransactionModel.java
++++ b/src/main/java/amlsim/model/normal/ForwardTransactionModel.java
+@@ -11,6 +11,8 @@ import java.util.*;
+  * Send money received from an account to another account in a similar way
+  */
+ public class ForwardTransactionModel extends AbstractTransactionModel {
++    private static final double GROUP_MEMBER_BIAS = 0.75;
++
+     private int index = 0;
+ 
+     private Random random;
+@@ -37,18 +39,35 @@ public class ForwardTransactionModel extends AbstractTransactionModel {
+ 
+     @Override
+     public void sendTransactions(long step, Account account) {
++        if((step - startStep) % interval != 0){
++            return;
++        }
++
++        List<Account> groupOrigs = this.accountGroup.getMembersInOrigList(account);
++        List<Account> groupDests = this.accountGroup.getMembersInBeneList(account);
++
++        if (!groupOrigs.isEmpty() && !groupDests.isEmpty() && this.random.nextDouble() < GROUP_MEMBER_BIAS) {
++            if(index >= groupDests.size()){
++                index = 0;
++            }
++
++            Account orig = groupOrigs.get(index % groupOrigs.size());
++            TargetedTransactionAmount upstreamAmount = new TargetedTransactionAmount(orig.getBalance(), random);
++            this.makeTransaction(step, upstreamAmount.doubleValue(), orig, account);
++
++            Account dest = groupDests.get(index);
++            TargetedTransactionAmount downstreamAmount = new TargetedTransactionAmount(account.getBalance(), random);
++            this.makeTransaction(step, downstreamAmount.doubleValue(), account, dest);
++            index++;
++            return;
++        }
+ 
+         TargetedTransactionAmount transactionAmount = new TargetedTransactionAmount(account.getBalance(), random);
+-        
+         List<Account> dests = account.getBeneList();
+         int numDests = dests.size();
+         if(numDests == 0){
+             return;
+         }
+-        if((step - startStep) % interval != 0){
+-            return;
+-        }
+-
+         if(index >= numDests){
+             index = 0;
+         }
+diff --git a/src/main/java/amlsim/model/normal/MutualTransactionModel.java b/src/main/java/amlsim/model/normal/MutualTransactionModel.java
+index 0a33ee3..b47b546 100755
+--- a/src/main/java/amlsim/model/normal/MutualTransactionModel.java
++++ b/src/main/java/amlsim/model/normal/MutualTransactionModel.java
+@@ -10,6 +10,8 @@ import java.util.Random;
+  * Return money to one of the previous senders
+  */
+ public class MutualTransactionModel extends AbstractTransactionModel {
++    private static final double GROUP_MEMBER_BIAS = 0.75;
++
+ 
+     private Random random;
+ 
+@@ -37,13 +39,26 @@ public class MutualTransactionModel extends AbstractTransactionModel {
+     public void sendTransactions(long step, Account account) {
+         if((step - this.startStep) % interval != 0)return;
+ 
+-        Account counterpart = account.getPrevOrig();
++        Account counterpart = null;
++        List<Account> origMembers = this.accountGroup.getMembersInOrigList(account);
++        if (!origMembers.isEmpty() && this.random.nextDouble() < GROUP_MEMBER_BIAS) {
++            counterpart = origMembers.get(this.random.nextInt(origMembers.size()));
++        }
++        if(counterpart == null){
++            List<Account> groupMembers = this.accountGroup.getMembersExcluding(account);
++            if(!groupMembers.isEmpty()) {
++                counterpart = groupMembers.get(this.random.nextInt(groupMembers.size()));
++            }
++        }
++        if(counterpart == null){
++            counterpart = account.getPrevOrig();
++        }
+         if(counterpart == null){
+             List<Account> origs = account.getOrigList();
+             if(origs.isEmpty()) {
+                 return;
+             }else{
+-                counterpart = origs.get(0);
++                counterpart = origs.get(this.random.nextInt(origs.size()));
+             }
+         }
+ 
+diff --git a/src/main/java/amlsim/model/normal/PeriodicalTransactionModel.java b/src/main/java/amlsim/model/normal/PeriodicalTransactionModel.java
+index 088031b..c6241be 100755
+--- a/src/main/java/amlsim/model/normal/PeriodicalTransactionModel.java
++++ b/src/main/java/amlsim/model/normal/PeriodicalTransactionModel.java
+@@ -1,5 +1,6 @@
+ package amlsim.model.normal;
+ 
++import java.util.List;
+ import java.util.Random;
+ 
+ import amlsim.Account;
+@@ -12,6 +13,7 @@ import amlsim.model.AbstractTransactionModel;
+  * Send money to neighbors periodically
+  */
+ public class PeriodicalTransactionModel extends AbstractTransactionModel {
++    private static final double GROUP_MEMBER_BIAS = 0.78;
+ 
+     private int index = 0;
+ 
+@@ -43,10 +45,11 @@ public class PeriodicalTransactionModel extends AbstractTransactionModel {
+ 
+     @Override
+     public void sendTransactions(long step, Account account) {
+-        if(!isValidStep(step) || account.getBeneList().isEmpty()){
++        List<Account> beneList = this.accountGroup.getPreferredBeneList(account, this.random, GROUP_MEMBER_BIAS);
++        if(!isValidStep(step) || beneList.isEmpty()){
+             return;
+         }
+-        int numDests = account.getBeneList().size();
++        int numDests = beneList.size();
+         if(index >= numDests){
+             index = 0;
+         }
+@@ -57,7 +60,7 @@ public class PeriodicalTransactionModel extends AbstractTransactionModel {
+         TargetedTransactionAmount transactionAmount = new TargetedTransactionAmount(account.getBalance() / eachCount, random);
+ 
+         for (int i = 0; i < eachCount; i++) {
+-            Account dest = account.getBeneList().get(index);
++            Account dest = beneList.get(index);
+             this.makeTransaction(step, transactionAmount.doubleValue(), account, dest);
+             index++;
+             if (index >= numDests)
+diff --git a/src/main/java/amlsim/model/normal/SingleTransactionModel.java b/src/main/java/amlsim/model/normal/SingleTransactionModel.java
+index fea1d23..523dec8 100755
+--- a/src/main/java/amlsim/model/normal/SingleTransactionModel.java
++++ b/src/main/java/amlsim/model/normal/SingleTransactionModel.java
+@@ -13,6 +13,8 @@ import java.util.Random;
+  * Send money only for once to one of the neighboring accounts regardless the transaction interval parameter
+  */
+ public class SingleTransactionModel extends AbstractTransactionModel {
++    private static final double GROUP_MEMBER_BIAS = 0.90;
++
+     /**
+      * Simulation step when this transaction is done
+      */
+@@ -45,7 +47,7 @@ public class SingleTransactionModel extends AbstractTransactionModel {
+     }
+     
+     public void sendTransactions(long step, Account account){
+-        List<Account> beneList = account.getBeneList();
++        List<Account> beneList = this.accountGroup.getPreferredBeneList(account, this.random, GROUP_MEMBER_BIAS);
+         int numBene = beneList.size();
+         if(step != this.txStep || numBene == 0){
+             return;

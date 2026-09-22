@@ -1,0 +1,4 @@
+count,min_balance,max_balance,country,business_type,model,bank_id
+500000,25000,70000,US,I,1,bank_a
+300000,60000,150000,US,I,1,bank_b
+200000,150000,500000,US,I,1,bank_c

@@ -1,0 +1,16 @@
+count,type,schedule_id,min_accounts,max_accounts,min_amount,max_amount,min_period,max_period,bank_id,is_sar
+450,fan_in,2,5,10,2000,10000,5,20,bank_a,True
+450,fan_out,2,5,10,2000,10000,5,20,bank_a,True
+450,cycle,2,4,8,3000,15000,5,20,bank_a,True
+
+700,fan_in,2,5,10,3000,15000,5,20,bank_b,True
+700,fan_out,2,5,10,3000,15000,5,20,bank_b,True
+700,cycle,2,4,8,5000,20000,5,20,bank_b,True
+
+1000,fan_in,2,5,10,5000,25000,5,20,bank_c,True
+1000,fan_out,2,5,10,5000,25000,5,20,bank_c,True
+1000,cycle,2,4,8,8000,30000,5,20,bank_c,True
+
+500,scatter_gather,2,6,12,8000,30000,5,25,,True
+500,gather_scatter,2,6,12,8000,30000,5,25,,True
+500,cycle,2,5,10,8000,30000,5,25,,True

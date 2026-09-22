@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "privacy-aware-federated-gcn-aml"
+version = "0.1.0"
+description = "Privacy-aware federated graph learning experiments for synthetic AML data."
+readme = "README.md"
+requires-python = ">=3.11,<3.12"
+license = "Apache-2.0"
+authors = [
+  {name = "Till Stinner"},
+]
+dependencies = [
+  "numpy>=1.26,<3",
+  "pandas>=2,<4",
+  "scikit-learn>=1.4,<2",
+  "torch>=2.5,<3",
+  "torch-geometric>=2.7,<3",
+]
+
+[project.optional-dependencies]
+he = ["tenseal==0.3.16"]
+analysis = ["matplotlib>=3.8,<4"]
+test = ["pytest>=8,<10"]
+
+[project.scripts]
+aml-gcn = "federated_gcn_aml.experiments.run_gcn_amlsim:main"
+aml-logreg = "federated_gcn_aml.experiments.run_logreg_amlsim:main"
+aml-federated-gcn = "federated_gcn_aml.experiments.run_federated_amlsim:main"
+
+[project.urls]
+Repository = "https://github.com/tillstinner/privacy-aware-federated-gcn-aml"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["federated_gcn_aml*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

@@ -1,0 +1,30 @@
+Privacy-Aware Federated GCNs for AML
+Copyright 2026 Till Stinner
+
+This repository includes a modified AMLSim transaction graph generator and
+configuration material derived from IBM AMLSim:
+
+  https://github.com/IBM/AMLSim
+  Licensed under the Apache License, Version 2.0.
+
+The federated graph-learning method and pretraining workflow build on work
+presented and implemented by:
+
+  FedGCN: https://github.com/yh-yao/FedGCN
+  Copyright (c) 2023 Carnegie Mellon University
+  Licensed under the MIT License.
+
+  FedGraph: https://github.com/FedGraph/fedgraph
+  Copyright (c) 2024 fedgraph-team
+  Licensed under the BSD 2-Clause License.
+
+This repository implements these methodological foundations for AMLSim bank
+partitions while adapting the implementation and protocol boundaries, including
+recipient-routed aggregate rows and separate transport, payload-protection, and
+model-update privacy layers. No FedGCN or FedGraph repository is vendored, and
+neither project is a runtime dependency. The links above document the principal
+method and implementation reference points for client graph construction,
+federated aggregation, and pretraining feature aggregation.
+
+PyTorch, PyTorch Geometric, TenSEAL, NumPy, pandas, and scikit-learn are
+third-party dependencies distributed under their respective licenses.
